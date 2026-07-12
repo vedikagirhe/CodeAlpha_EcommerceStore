@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details | TechNest</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+    <h1>TechNest 🛍️</h1>
+
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="index.html">Products</a>
+        <a href="login.html">Login</a>
+        <a href="cart.html">
+            Cart 🛒 (<span id="cart-count">0</span>)
+        </a>
+    </nav>
+</header>
+
+<section class="product-details">
+    <div class="product-image">
+        <img id="detail-image" src="" alt="Product">
+    </div>
+
+    <div class="product-info">
+        <h2 id="detail-name"></h2>
+        <h3>₹<span id="detail-price"></span></h3>
+
+        <p id="detail-description"></p>
+
+        <button id="detail-cart-button">
+            Add to Cart
+        </button>
+    </div>
+</section>
+
+<script src="script.js"></script>
+
+</body>
+</html>

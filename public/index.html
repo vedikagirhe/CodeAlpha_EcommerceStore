@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechNest</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+    <h1>TechNest 🛍️</h1>
+
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="#products">Products</a>
+
+        <span id="user-display">
+            <a href="login.html">Login</a>
+        </span>
+        <a href="orders.html">My Orders</a>
+        <a href="cart.html">
+            Cart 🛒 (<span id="cart-count">0</span>)
+        </a>
+    </nav>
+</header>
+
+<section class="hero">
+    <h2>Welcome to TechNest</h2>
+    <p>Discover amazing tech products at the best prices.</p>
+    <button onclick="location.href='#products'">Shop Now</button>
+</section>
+
+<section class="products" id="products">
+
+    <h2>Our Products</h2>
+
+    <div class="search-container">
+        <input
+            type="text"
+            id="product-search"
+            placeholder="Search products..."
+        >
+    </div>
+
+    <div class="product-container" id="product-container">
+        <p>Loading products...</p>
+    </div>
+
+</section>
+
+<script src="script.js"></script>
+
+</body>
+
+</html>

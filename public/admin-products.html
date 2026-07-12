@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Manage Products | TechNest</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+    <h1>TechNest Admin 🛍️</h1>
+
+    <nav>
+        <a href="index.html">Store</a>
+        <a href="admin.html">Orders</a>
+        <a href="admin-products.html">Products</a>
+        <button onclick="adminLogout()">Logout</button>
+    </nav>
+</header>
+
+<section class="admin-products-section">
+
+    <h2>Manage Products 📦</h2>
+
+    <div class="add-product-box">
+
+        <h3>Add New Product</h3>
+
+        <form id="add-product-form">
+
+            <input
+                type="text"
+                id="product-name"
+                placeholder="Product Name"
+                required
+            >
+
+            <input
+                type="number"
+                id="product-price"
+                placeholder="Price"
+                required
+            >
+
+            <input
+                type="text"
+                id="product-image"
+                placeholder="Image Path e.g. images/watch.jpg"
+                required
+            >
+
+            <textarea
+                id="product-description"
+                placeholder="Product Description"
+                required
+            ></textarea>
+
+            <button type="submit">
+                Add Product
+            </button>
+
+        </form>
+
+    </div>
+
+    <h3>Product List</h3>
+
+    <div id="admin-product-list"></div>
+
+</section>
+
+<script src="script.js"></script>
+
+</body>
+
+</html>
