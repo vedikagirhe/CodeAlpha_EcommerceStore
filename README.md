@@ -100,6 +100,26 @@ The administrator can review the return request and update the order status to R
 
 This project was developed as part of the CodeAlpha Web Development Internship.
 
+## Project Screenshots
+
+### Home Page
+![Home Page](screenshots/home.png)
+
+### Product Details
+![Product Details](screenshots/product.png)
+
+### Shopping Cart
+![Shopping Cart](screenshots/cart.png)
+
+### My Orders
+![My Orders](screenshots/orders.png)
+
+### Admin Orders Dashboard
+![Admin Orders Dashboard](screenshots/admin-orders.png)
+
+### Admin Product Management
+![Admin Product Management](screenshots/admin-products.png)
+
 ## Author
 
 Vedika Girhe
