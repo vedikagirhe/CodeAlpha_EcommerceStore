@@ -20,6 +20,12 @@ The application allows users to browse technology products, create an account, l
 - Track Order Status
 - Cancel Orders
 - 7-Day Return Policy
+- Razorpay Payment Integration
+- Secure Payment Verification
+- Payment Status Tracking
+- Payment ID Storage
+- Responsive Shopping Cart
+- Order Summary
 
 ### Admin Features
 - Secure Admin Login
@@ -30,9 +36,18 @@ The application allows users to browse technology products, create an account, l
 - Add Products
 - Edit Products
 - Delete Products
+- Admin Dashboard Statistics
+- Total Orders Overview
+- Paid Orders Tracking
+- Pending Payment Tracking
+- Total Revenue Overview
+- Search Orders by Customer
+- Filter Orders by Payment Status
+- Filter Orders by Order Status
+- View Product Images and Details
+
 
 ## Technologies Used
-
 - HTML5
 - CSS3
 - JavaScript
@@ -42,6 +57,10 @@ The application allows users to browse technology products, create an account, l
 - Better SQLite3
 - bcrypt.js
 - Express Session
+- Razorpay Payment Gateway
+- dotenv
+- Node.js Crypto Module
+
 
 ## Project Structure
 
@@ -96,6 +115,18 @@ The administrator can review the return request and update the order status to R
 - Admin routes are protected using server-side sessions.
 - Admin authentication is required for product and order management.
 
+## Payment Integration
+
+TechNest integrates Razorpay for secure online payments.
+
+- Razorpay Checkout integration
+- Server-side payment signature verification
+- Payment status tracking
+- Razorpay Payment ID storage
+- Orders are created after successful payment verification
+- Secure payment processing using environment variables
+
+
 ## Internship
 
 This project was developed as part of the CodeAlpha Web Development Internship.
@@ -119,6 +150,9 @@ This project was developed as part of the CodeAlpha Web Development Internship.
 
 ### Admin Product Management
 ![Admin Product Management](screenshots/admin-products.png)
+
+### Razorpay Payment
+![Razorpay Payment](screenshots/payment-success.png)
 
 ## Author
 
