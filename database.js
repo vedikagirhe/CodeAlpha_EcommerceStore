@@ -95,7 +95,31 @@ db.prepare(`
 const orderTableColumns = db.prepare(
     "PRAGMA table_info(orders)"
 ).all();
+const hasPaymentStatus = orderColumns.some(
+    column => column.name === "payment_status"
+);
 
+if (!hasPaymentStatus) {
+    db.prepare(`
+        ALTER TABLE orders
+        ADD COLUMN payment_status TEXT DEFAULT 'Pending'
+    `).run();
+
+    console.log("Payment status column added!");
+}
+
+const hasPaymentId = orderColumns.some(
+    column => column.name === "payment_id"
+);
+
+if (!hasPaymentId) {
+    db.prepare(`
+        ALTER TABLE orders
+        ADD COLUMN payment_id TEXT
+    `).run();
+
+    console.log("Payment ID column added!");
+}
 const hasDeliveredAt = orderTableColumns.some(
     column => column.name === "delivered_at"
 );

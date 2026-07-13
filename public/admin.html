@@ -26,7 +26,50 @@
 <section class="orders-section">
 
     <h2>Admin Orders Dashboard 📦</h2>
+<div class="admin-summary">
+    <div class="summary-card">
+        <h3>Total Orders</h3>
+        <p id="total-orders">0</p>
+    </div>
 
+    <div class="summary-card">
+        <h3>Paid Orders</h3>
+        <p id="paid-orders">0</p>
+    </div>
+
+    <div class="summary-card">
+        <h3>Pending Payments</h3>
+        <p id="pending-orders">0</p>
+    </div>
+
+    <div class="summary-card">
+        <h3>Total Revenue</h3>
+        <p id="total-revenue">₹0</p>
+    </div>
+</div>
+<div class="admin-order-filters">
+    <input
+        type="text"
+        id="admin-order-search"
+        placeholder="Search customer or order ID..."
+    >
+
+    <select id="payment-filter">
+        <option value="All">All Payments</option>
+        <option value="Paid">Paid</option>
+        <option value="Pending">Pending</option>
+    </select>
+
+    <select id="order-status-filter">
+        <option value="All">All Status</option>
+        <option value="Placed">Placed</option>
+        <option value="Processing">Processing</option>
+        <option value="Delivered">Delivered</option>
+        <option value="Cancelled">Cancelled</option>
+        <option value="Return Requested">Return Requested</option>
+        <option value="Returned">Returned</option>
+    </select>
+</div>
     <div id="admin-orders-container">
         <p>Loading orders...</p>
     </div>

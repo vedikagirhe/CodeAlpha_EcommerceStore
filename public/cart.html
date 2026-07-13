@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Shopping Cart | TechNest</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -15,22 +18,85 @@
     <nav>
         <a href="index.html">Home</a>
         <a href="index.html">Products</a>
-        <a href="#">Login</a>
-        <a href="cart.html">Cart 🛒</a>
+
+        <span id="cart-user-nav"></span>
+
+        <a href="cart.html">
+            Cart 🛒 (<span id="cart-count">0</span>)
+        </a>
     </nav>
 </header>
 
-<section class="cart-section">
-    <h2>My Shopping Cart 🛒</h2>
 
-    <div id="cart-items"></div>
+<main class="modern-cart-page">
 
-    <h3>Total: ₹<span id="cart-total">0</span></h3>
+    <h2>Shopping Cart 🛒</h2>
 
-    <button onclick="checkout()">Place Order</button>
-</section>
+    <div class="cart-layout">
+
+        <!-- CART PRODUCTS -->
+
+        <section class="cart-products-section">
+
+            <div id="cart-items"></div>
+
+        </section>
+
+
+        <!-- ORDER SUMMARY -->
+
+        <aside class="order-summary">
+
+            <h2>Order Summary</h2>
+
+            <div class="summary-row">
+                <span>Subtotal</span>
+
+                <span>
+                    ₹<span id="cart-subtotal">0</span>
+                </span>
+            </div>
+
+            <div class="summary-row">
+                <span>Delivery</span>
+
+                <span class="free-delivery">
+                    FREE
+                </span>
+            </div>
+
+            <hr>
+
+            <div class="summary-total">
+                <span>Total</span>
+
+                <span>
+                    ₹<span id="cart-total">0</span>
+                </span>
+            </div>
+
+            <button
+                class="secure-checkout-btn"
+                onclick="checkout()"
+            >
+                Proceed to Secure Payment 🔒
+            </button>
+
+            <p class="secure-payment-text">
+                Secure payment powered by Razorpay
+            </p>
+
+        </aside>
+
+    </div>
+
+</main>
+
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <script src="script.js"></script>
 
 </body>
+
 </html>

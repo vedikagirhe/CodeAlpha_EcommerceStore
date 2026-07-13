@@ -1,7 +1,15 @@
+require("dotenv").config();
+const crypto = require("crypto");
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const session = require("express-session");
 const db = require("./database");
+const Razorpay = require("razorpay");
+
+const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
+});
 
 const app = express();
 const PORT = 3000;
@@ -332,21 +340,44 @@ app.get("/admin/orders", requireAdmin, (req, res) => {
             ORDER BY order_date DESC
         `).all();
 
-        const formattedOrders = orders.map(order => ({
-            ...order,
-            products: JSON.parse(order.products)
-        }));
+        const getProduct = db.prepare(`
+            SELECT image, description
+            FROM products
+            WHERE name = ?
+        `);
+
+        const formattedOrders = orders.map(order => {
+            const orderProducts = JSON.parse(order.products);
+
+            const productsWithDetails = orderProducts.map(product => {
+                const productDetails = getProduct.get(product.name);
+
+                return {
+                    ...product,
+                    image: productDetails?.image || "",
+                    description:
+                        productDetails?.description ||
+                        "Product details"
+                };
+            });
+
+            return {
+                ...order,
+                products: productsWithDetails
+            };
+        });
 
         res.json(formattedOrders);
 
     } catch (error) {
+        console.log(error);
+
         res.status(500).json({
             success: false,
             message: "Could not load admin orders!"
         });
     }
 });
-
 // ================= UPDATE ORDER STATUS =================
 
 app.put(
@@ -593,6 +624,99 @@ app.put("/orders/:id/return", (req, res) => {
         res.status(500).json({
             success: false,
             message: "Could not request return!"
+        });
+    }
+});
+// ================= CREATE RAZORPAY ORDER =================
+
+app.post("/create-payment-order", async (req, res) => {
+    const { total } = req.body;
+
+    try {
+        const razorpayOrder = await razorpay.orders.create({
+            amount: Math.round(Number(total) * 100),
+            currency: "INR",
+            receipt: "receipt_" + Date.now()
+        });
+
+        res.json({
+            success: true,
+            orderId: razorpayOrder.id,
+            amount: razorpayOrder.amount,
+            currency: razorpayOrder.currency,
+            keyId: process.env.RAZORPAY_KEY_ID
+        });
+
+    } catch (error) {
+        console.log(error);
+
+        res.status(500).json({
+            success: false,
+            message: "Could not create payment order!"
+        });
+    }
+});
+// ================= VERIFY RAZORPAY PAYMENT =================
+
+app.post("/verify-payment", (req, res) => {
+    try {
+        const {
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature,
+            customerName,
+            products,
+            total
+        } = req.body;
+
+        const generatedSignature = crypto
+            .createHmac(
+                "sha256",
+                process.env.RAZORPAY_KEY_SECRET
+            )
+            .update(
+                razorpay_order_id + "|" + razorpay_payment_id
+            )
+            .digest("hex");
+
+        if (generatedSignature !== razorpay_signature) {
+            return res.status(400).json({
+                success: false,
+                message: "Payment verification failed!"
+            });
+        }
+
+        const insertOrder = db.prepare(`
+    INSERT INTO orders (
+        customer_name,
+        products,
+        total,
+        payment_status,
+        payment_id
+    )
+    VALUES (?, ?, ?, ?, ?)
+`);
+
+const result = insertOrder.run(
+    customerName,
+    JSON.stringify(products),
+    total,
+    "Paid",
+    razorpay_payment_id
+);
+
+        res.json({
+            success: true,
+            message: "Payment successful! Order placed.",
+            orderId: result.lastInsertRowid
+        });
+
+    } catch (error) {
+        console.log(error);
+
+        res.status(500).json({
+            success: false,
+            message: "Could not verify payment!"
         });
     }
 });

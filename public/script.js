@@ -41,48 +41,120 @@
         alert(productName + " added to cart!");
     }
 
-    function displayCart() {
-        const cartItems = document.getElementById("cart-items");
-        const cartTotal = document.getElementById("cart-total");
+    async function displayCart() {
+    const cartItems = document.getElementById("cart-items");
+    const cartTotal = document.getElementById("cart-total");
+    const cartSubtotal = document.getElementById("cart-subtotal");
 
-        if (!cartItems || !cartTotal) {
-            return;
+    if (!cartItems || !cartTotal) {
+        return;
+    }
+
+    cartItems.innerHTML = "";
+
+    let total = 0;
+
+    try {
+        const response = await fetch("/products");
+        const allProducts = await response.json();
+
+        if (cart.length === 0) {
+            cartItems.innerHTML = `
+                <div class="empty-cart">
+                    <h3>Your cart is empty 🛒</h3>
+                    <p>Add products to continue shopping.</p>
+
+                    <a href="index.html" class="continue-shopping-btn">
+                        Continue Shopping
+                    </a>
+                </div>
+            `;
         }
 
-        cartItems.innerHTML = "";
-
-        let total = 0;
-
         cart.forEach((product, index) => {
+            const fullProduct = allProducts.find(
+                item => item.name === product.name
+            );
+
+            const image = fullProduct
+                ? fullProduct.image
+                : "";
+
+            const description = fullProduct
+                ? fullProduct.description
+                : "Technology product from TechNest.";
+
+            const quantity = product.quantity || 1;
+
             const item = document.createElement("div");
 
-            item.classList.add("cart-item");
+            item.classList.add("modern-cart-item");
 
             item.innerHTML = `
-                <div>
-                    <h3>${product.name}</h3>
-                    <p>₹${product.price.toLocaleString("en-IN")}</p>
+                <div class="cart-product-image">
+                    ${
+                        image
+                            ? `<img src="${image}" alt="${product.name}">`
+                            : ""
+                    }
                 </div>
 
-                <div class="quantity-controls">
-                    <button onclick="decreaseQuantity(${index})">−</button>
-                    <span>${product.quantity || 1}</span>
-                    <button onclick="increaseQuantity(${index})">+</button>
-                    <button onclick="removeFromCart(${index})">Remove</button>
+                <div class="cart-product-details">
+                    <h3>${product.name}</h3>
+
+                    <p class="cart-description">
+                        ${description}
+                    </p>
+
+                    <p class="cart-price">
+                        ₹${product.price.toLocaleString("en-IN")}
+                    </p>
+
+                    <button
+                        class="remove-cart-btn"
+                        onclick="removeFromCart(${index})"
+                    >
+                        Remove
+                    </button>
+                </div>
+
+                <div class="modern-quantity-controls">
+                    <button onclick="decreaseQuantity(${index})">
+                        −
+                    </button>
+
+                    <span>${quantity}</span>
+
+                    <button onclick="increaseQuantity(${index})">
+                        +
+                    </button>
                 </div>
             `;
 
             cartItems.appendChild(item);
 
-            total += product.price * (product.quantity || 1);
+            total += product.price * quantity;
         });
 
-        cartTotal.textContent = total.toLocaleString("en-IN");
-    }
+        const formattedTotal = total.toLocaleString("en-IN");
 
+        cartTotal.textContent = formattedTotal;
+
+        if (cartSubtotal) {
+            cartSubtotal.textContent = formattedTotal;
+        }
+
+    } catch (error) {
+        console.log(error);
+
+        cartItems.innerHTML =
+            "<p>Could not load cart products.</p>";
+    }
+}
     function increaseQuantity(index) {
         cart[index].quantity = (cart[index].quantity || 1) + 1;
 
+        
         saveCart();
         displayCart();
         updateCartCount();
@@ -113,54 +185,102 @@
     // ================= CHECKOUT =================
 
     async function checkout() {
-        if (cart.length === 0) {
-            alert("Your cart is empty!");
-            return;
-        }
-
-        const customerName = localStorage.getItem("userName");
-
-        if (!customerName) {
-            alert("Please login before placing an order!");
-            window.location.href = "login.html";
-            return;
-        }
-
-        const total = cart.reduce(
-            (sum, product) =>
-                sum + product.price * (product.quantity || 1),
-            0
-        );
-
-        try {
-            const response = await fetch("/order", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    customerName,
-                    products: cart,
-                    total
-                })
-            });
-
-            const data = await response.json();
-
-            alert(data.message);
-
-            if (data.success) {
-                cart = [];
-                localStorage.removeItem("cart");
-
-                displayCart();
-                updateCartCount();
-            }
-        } catch (error) {
-            alert("Something went wrong while placing the order!");
-        }
+    if (cart.length === 0) {
+        alert("Your cart is empty!");
+        return;
     }
 
+    const customerName = localStorage.getItem("userName");
+
+    if (!customerName) {
+        alert("Please login before placing an order!");
+        window.location.href = "login.html";
+        return;
+    }
+
+    const total = cart.reduce(
+        (sum, product) =>
+            sum + product.price * (product.quantity || 1),
+        0
+    );
+
+    try {
+        const response = await fetch("/create-payment-order", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                total
+            })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            alert(data.message);
+            return;
+        }
+
+        const options = {
+            key: data.keyId,
+            amount: data.amount,
+            currency: data.currency,
+            name: "TechNest",
+            description: "TechNest Product Order",
+            order_id: data.orderId,
+
+            handler: async function (paymentResponse) {
+                const verifyResponse = await fetch("/verify-payment", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        razorpay_order_id:
+                            paymentResponse.razorpay_order_id,
+
+                        razorpay_payment_id:
+                            paymentResponse.razorpay_payment_id,
+
+                        razorpay_signature:
+                            paymentResponse.razorpay_signature,
+
+                        customerName,
+                        products: cart,
+                        total
+                    })
+                });
+
+                const verifyData = await verifyResponse.json();
+
+                alert(verifyData.message);
+
+                if (verifyData.success) {
+                    cart = [];
+                    localStorage.removeItem("cart");
+
+                    displayCart();
+                    updateCartCount();
+
+                    window.location.href = "orders.html";
+                }
+            },
+
+            theme: {
+                color: "#2563eb"
+            }
+        };
+
+        const paymentObject = new Razorpay(options);
+
+        paymentObject.open();
+
+    } catch (error) {
+        console.log(error);
+        alert("Could not start payment!");
+    }
+}
     // ================= USER REGISTER =================
 
     const registerForm = document.getElementById("register-form");
@@ -390,125 +510,200 @@
             .replace(/\s+/g, "-");
     }
 
-    async function loadOrders() {
-        const ordersContainer =
-            document.getElementById("orders-container");
+async function loadOrders() {
+    const ordersContainer =
+        document.getElementById("orders-container");
 
-        if (!ordersContainer) {
-            return;
-        }
-
-        const customerName = localStorage.getItem("userName");
-
-        if (!customerName) {
-            ordersContainer.innerHTML =
-                "<p>Please login to view your orders.</p>";
-            return;
-        }
-
-        try {
-            const response = await fetch(
-                `/orders/${encodeURIComponent(customerName)}`
-            );
-
-            const orders = await response.json();
-
-            ordersContainer.innerHTML = "";
-
-            if (!Array.isArray(orders) || orders.length === 0) {
-                ordersContainer.innerHTML =
-                    "<p>No orders found.</p>";
-                return;
-            }
-
-            orders.forEach(order => {
-                const orderCard = document.createElement("div");
-
-                orderCard.classList.add("order-card");
-
-                const productNames = order.products
-                    .map(product =>
-                        `${product.name} × ${product.quantity || 1}`
-                    )
-                    .join(", ");
-
-                let actionHtml = "";
-
-                if (order.status === "Delivered") {
-                    actionHtml = `
-                        <button
-                            class="return-order-btn"
-                            onclick="returnOrder(${order.id})"
-                        >
-                            Return Order
-                        </button>
-                    `;
-                } else if (order.status === "Cancelled") {
-                    actionHtml = `
-                        <p class="cancelled-text">
-                            Order Cancelled ❌
-                        </p>
-                    `;
-                } else if (order.status === "Return Requested") {
-                    actionHtml = `
-                        <p class="return-text">
-                            Return Requested 🔄
-                        </p>
-                    `;
-                } else if (order.status === "Returned") {
-                    actionHtml = `
-                        <p class="returned-text">
-                            Order Returned ✅
-                        </p>
-                    `;
-                } else {
-                    actionHtml = `
-                        <button
-                            class="cancel-order-btn"
-                            onclick="cancelOrder(${order.id})"
-                        >
-                            Cancel Order
-                        </button>
-                    `;
-                }
-
-                orderCard.innerHTML = `
-                    <h3>Order #${order.id}</h3>
-
-                    <p>
-                        <strong>Products:</strong>
-                        ${productNames}
-                    </p>
-
-                    <p>
-                        <strong>Total:</strong>
-                        ₹${order.total.toLocaleString("en-IN")}
-                    </p>
-
-                    <p>
-                        <strong>Status:</strong>
-                        <span class="order-status ${getStatusClass(order.status)}">
-                            ${order.status || "Placed"}
-                        </span>
-                    </p>
-
-                    <p>
-                        <strong>Order Date:</strong>
-                        ${order.order_date}
-                    </p>
-
-                    ${actionHtml}
-                `;
-
-                ordersContainer.appendChild(orderCard);
-            });
-        } catch (error) {
-            ordersContainer.innerHTML =
-                "<p>Could not load orders.</p>";
-        }
+    if (!ordersContainer) {
+        return;
     }
 
-    loadOrders();
+    const customerName = localStorage.getItem("userName");
+
+    if (!customerName) {
+        ordersContainer.innerHTML =
+            "<p>Please login to view your orders.</p>";
+        return;
+    }
+
+    try {
+        const [ordersResponse, productsResponse] =
+            await Promise.all([
+                fetch(
+                    `/orders/${encodeURIComponent(customerName)}`
+                ),
+                fetch("/products")
+            ]);
+
+        const orders = await ordersResponse.json();
+        const allProducts = await productsResponse.json();
+
+        ordersContainer.innerHTML = "";
+
+        if (!Array.isArray(orders) || orders.length === 0) {
+            ordersContainer.innerHTML =
+                "<p>No orders found.</p>";
+            return;
+        }
+
+        orders.forEach(order => {
+            const orderCard = document.createElement("div");
+
+            orderCard.classList.add("order-card");
+
+            const productDetails = order.products
+                .map(product => {
+                    const fullProduct = allProducts.find(
+                        item => item.name === product.name
+                    );
+
+                    const image = fullProduct
+                        ? fullProduct.image
+                        : "";
+
+                    const description = fullProduct
+                        ? fullProduct.description
+                        : "Product details unavailable.";
+
+                    return `
+                        <div class="order-product">
+                            ${
+                                image
+                                    ? `<img
+                                        src="${image}"
+                                        alt="${product.name}"
+                                    >`
+                                    : ""
+                            }
+
+                            <div class="order-product-info">
+                                <h4>${product.name}</h4>
+
+                                <p>${description}</p>
+
+                                <p>
+                                    <strong>Price:</strong>
+                                    ₹${product.price.toLocaleString("en-IN")}
+                                </p>
+
+                                <p>
+                                    <strong>Quantity:</strong>
+                                    ${product.quantity || 1}
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                })
+                .join("");
+
+            let actionHtml = "";
+
+            if (order.status === "Delivered") {
+                actionHtml = `
+                    <button
+                        class="return-order-btn"
+                        onclick="returnOrder(${order.id})"
+                    >
+                        Return Order
+                    </button>
+                `;
+            } else if (order.status === "Cancelled") {
+                actionHtml = `
+                    <p class="cancelled-text">
+                        Order Cancelled ❌
+                    </p>
+                `;
+            } else if (
+                order.status === "Return Requested"
+            ) {
+                actionHtml = `
+                    <p class="return-text">
+                        Return Requested 🔄
+                    </p>
+                `;
+            } else if (order.status === "Returned") {
+                actionHtml = `
+                    <p class="returned-text">
+                        Order Returned ✅
+                    </p>
+                `;
+            } else {
+                actionHtml = `
+                    <button
+                        class="cancel-order-btn"
+                        onclick="cancelOrder(${order.id})"
+                    >
+                        Cancel Order
+                    </button>
+                `;
+            }
+
+            orderCard.innerHTML = `
+                <h3>Order #${order.id}</h3>
+
+                <div class="order-products">
+                    ${productDetails}
+                </div>
+
+                <p>
+                    <strong>Total Amount:</strong>
+                    ₹${order.total.toLocaleString("en-IN")}
+                </p>
+
+                <p>
+                    <strong>Order Status:</strong>
+
+                    <span
+                        class="order-status ${getStatusClass(order.status)}"
+                    >
+                        ${order.status || "Placed"}
+                    </span>
+                </p>
+
+                ${
+                    order.payment_id
+                        ? `
+                            
+                        `
+                        : ""
+                }
+
+                <p>
+    <strong>Payment Status:</strong>
+    <span class="payment-paid">
+        ${order.payment_status || "Pending"}
+    </span>
+</p>
+
+${order.payment_id ? `
+    <p>
+        <strong>Payment ID:</strong>
+        <span class="payment-id">
+            ${order.payment_id}
+        </span>
+    </p>
+` : ""}
+
+<p>
+    <strong>Order Date:</strong>
+    ${order.order_date}
+</p>
+
+${actionHtml}
+            `;
+
+            ordersContainer.appendChild(orderCard);
+        });
+
+    } catch (error) {
+        console.log(error);
+
+        ordersContainer.innerHTML =
+            "<p>Could not load orders.</p>";
+    }
+}
+
+loadOrders();
 
     async function cancelOrder(orderId) {
         const confirmCancel = confirm(
@@ -673,6 +868,31 @@
             }
 
             const orders = await response.json();
+const totalOrders = orders.length;
+
+const paidOrders = orders.filter(
+    order => order.payment_status === "Paid"
+).length;
+
+const pendingOrders = orders.filter(
+    order => order.payment_status !== "Paid"
+).length;
+
+const totalRevenue = orders
+    .filter(order => order.payment_status === "Paid")
+    .reduce((sum, order) => sum + order.total, 0);
+
+document.getElementById("total-orders").textContent =
+    totalOrders;
+
+document.getElementById("paid-orders").textContent =
+    paidOrders;
+
+document.getElementById("pending-orders").textContent =
+    pendingOrders;
+
+document.getElementById("total-revenue").textContent =
+    `₹${totalRevenue.toLocaleString("en-IN")}`;
 
             container.innerHTML = "";
 
@@ -681,17 +901,56 @@
                 return;
             }
 
-            orders.forEach(order => {
+            const searchInput =
+    document.getElementById("admin-order-search");
+
+const paymentFilter =
+    document.getElementById("payment-filter");
+
+const statusFilter =
+    document.getElementById("order-status-filter");
+
+function displayAdminOrders(filteredOrders) {
+    container.innerHTML = "";
+
+    if (filteredOrders.length === 0) {
+        container.innerHTML = "<p>No matching orders found.</p>";
+        return;
+    }
+
+    filteredOrders.forEach(order => {
                 const card = document.createElement("div");
 
                 card.classList.add("order-card");
 
-                const productNames = order.products
-                    .map(product =>
-                        `${product.name} × ${product.quantity || 1}`
-                    )
-                    .join(", ");
+                const productDetails = order.products
+    .map(product => `
+        <div class="admin-order-product">
+            <img
+                src="${product.image}"
+                alt="${product.name}"
+            >
 
+            <div>
+                <h4>${product.name}</h4>
+
+                <p>
+                    ${product.description || "Product details"}
+                </p>
+
+                <p>
+                    <strong>Price:</strong>
+                    ₹${product.price.toLocaleString("en-IN")}
+                </p>
+
+                <p>
+                    <strong>Quantity:</strong>
+                    ${product.quantity || 1}
+                </p>
+            </div>
+        </div>
+    `)
+    .join("");
                 card.innerHTML = `
                     <h3>Order #${order.id}</h3>
 
@@ -700,26 +959,56 @@
                         ${order.customer_name}
                     </p>
 
-                    <p>
-                        <strong>Products:</strong>
-                        ${productNames}
-                    </p>
+                    <div class="admin-order-products">
+    ${productDetails}
+</div>
 
                     <p>
-                        <strong>Total:</strong>
-                        ₹${order.total.toLocaleString("en-IN")}
-                    </p>
+    <strong>Total:</strong>
+    ₹${order.total.toLocaleString("en-IN")}
+</p>
 
-                    <p>
-                        <strong>Status:</strong>
-                        <span class="order-status ${getStatusClass(order.status)}">
+<p>
+    <strong>Payment Status:</strong>
+
+    <span class="${
+        order.payment_status === "Paid"
+            ? "admin-payment-paid"
+            : "admin-payment-pending"
+    }">
+        ${order.payment_status || "Pending"}
+    </span>
+</p>
+
+${order.payment_id ? `
+    <p>
+        <strong>Payment ID:</strong>
+        <span class="payment-id">
+            ${order.payment_id}
+        </span>
+    </p>
+` : ""}
+
+<p>
+    <strong>Order Date:</strong>
+    ${order.order_date}
+</p>
+
+<p>
+    <strong>Status:</strong>
+                          <span class="order-status ${getStatusClass(order.status)}">
                             ${order.status}
                         </span>
                     </p>
 
-                    <select
-                        onchange="updateOrderStatus(${order.id}, this.value)"
-                    >
+                    <div class="admin-status-control">
+    <label>Update Order Status</label>
+
+    <select
+        class="admin-status-select"
+        onchange="updateOrderStatus(${order.id}, this.value)"
+    >
+    </div>
                         <option value="Placed"
                             ${order.status === "Placed" ? "selected" : ""}>
                             Placed
@@ -754,6 +1043,39 @@
 
                 container.appendChild(card);
             });
+            }
+
+function applyAdminFilters() {
+    const searchValue = searchInput.value.toLowerCase().trim();
+    const paymentValue = paymentFilter.value;
+    const statusValue = statusFilter.value;
+
+    const filteredOrders = orders.filter(order => {
+        const matchesSearch =
+            order.customer_name.toLowerCase().includes(searchValue) ||
+            order.id.toString().includes(searchValue);
+
+        const matchesPayment =
+            paymentValue === "All" ||
+            (order.payment_status || "Pending") === paymentValue;
+
+        const matchesStatus =
+            statusValue === "All" ||
+            order.status === statusValue;
+
+        return matchesSearch &&
+            matchesPayment &&
+            matchesStatus;
+    });
+
+    displayAdminOrders(filteredOrders);
+}
+
+searchInput.oninput = applyAdminFilters;
+paymentFilter.onchange = applyAdminFilters;
+statusFilter.onchange = applyAdminFilters;
+
+displayAdminOrders(orders);
         } catch (error) {
             container.innerHTML =
                 "<p>Could not load admin orders.</p>";
@@ -1019,3 +1341,38 @@
 
     updateCartCount();
     displayCart();
+
+    function updateCartUserNavbar() {
+    const userNav = document.getElementById("cart-user-nav");
+
+    if (!userNav) {
+        return;
+    }
+
+    const userName = localStorage.getItem("userName");
+
+    if (userName) {
+        userNav.innerHTML = `
+            <span class="welcome-user">
+                Welcome, ${userName}
+            </span>
+
+            <a href="orders.html">My Orders</a>
+
+            <button class="nav-logout-btn" onclick="logoutUser()">
+                Logout
+            </button>
+        `;
+    } else {
+        userNav.innerHTML = `
+            <a href="login.html">Login</a>
+        `;
+    }
+}
+
+function logoutUser() {
+    localStorage.removeItem("userName");
+    window.location.href = "login.html";
+}
+
+updateCartUserNavbar();
